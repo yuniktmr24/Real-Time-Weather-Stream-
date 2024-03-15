@@ -34,6 +34,8 @@ public class TopKCounterBolt extends BaseBasicBolt {
 
     ScheduledExecutorService scheduler;
 
+    private int totalTuples;
+
     private void setupEpaCounters() {
         //yeah well this could be an array too
         epa1Counter = new LossyCounter(0.01); //high freq, so more buckets than the rest
@@ -54,6 +56,9 @@ public class TopKCounterBolt extends BaseBasicBolt {
         logger.info("Top 5 states with EPA 3: " + epa3Counter.toString());
         logger.info("Top 5 states with EPA 4: " + epa4Counter.toString());
         logger.info("Top 5 states with EPA 5: " + epa5Counter.toString());
+
+        //reset count now. start fresh for the next minute
+        setupEpaCounters();
     }
 
     @Override
@@ -76,7 +81,9 @@ public class TopKCounterBolt extends BaseBasicBolt {
     }
     @Override
     public void execute(Tuple tuple, BasicOutputCollector basicOutputCollector) {
+        totalTuples = tuple.getInteger(2);
         //List<AQIResponse> aqiResponses = (List<AQIResponse>) tuple.getValue(0);
+        int processedTuples = tuple.getInteger(1);
 
         AQIResponse response = (AQIResponse) tuple.getValue(0);
         String zip = response.getZip();
@@ -100,25 +107,14 @@ public class TopKCounterBolt extends BaseBasicBolt {
             epa5Counter.accept(state);
         }
 
-        logger.info("Received AQI response - Zip: " + zip + ", Location: " + location + ", State "+ state + ", AQI: " + aqi);
+        //logger.info("Received AQI response - Zip: " + zip + ", Location: " + location + ", State "+ state + ", AQI: " + aqi);
 
-//        // Process the list of AQIResponse objects
-//        for (AQIResponse response : aqiResponses) {
-//            // Process each AQIResponse object
-//            String zip = response.getZip();
-//            String location = response.getLocation();
-//            int aqi = response.getAqi();
-//
-//            // Do something with the AQIResponse object
-//            //System.out.println("Received AQI response - Zip: " + zip + ", Location: " + location + ", AQI: " + aqi);
-//            logger.info("Received AQI response - Zip: " + zip + ", Location: " + location + ", AQI: " + aqi);
-//        }
+        if (processedTuples % totalTuples == 0) {
+            System.out.println("Processed a complete round of weather data for all zip codes");
+//            setupEpaCounters();
+        }
     }
 
-    private void emitRankings (BasicOutputCollector collector) {
-        //todo lossy counting alg to get rankings
-        //collector.emit();
-    }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {

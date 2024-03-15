@@ -59,28 +59,31 @@ public class WeatherDataSpout extends BaseRichSpout {
         List<ZipCodeData> zip = WeatherAPIRequest.readZipCodes(filePath != null ? filePath : "src/main/resources/uszips_min.csv");
 
         System.out.println("Zip # " + zip.size());
-        AtomicInteger counter = new AtomicInteger(0);
+        AtomicInteger processedCounter = new AtomicInteger(0);
+        AtomicInteger connectionsCreatedCounter = new AtomicInteger(0);
         for (ZipCodeData z : zip) {
             WeatherAPIRequest.sendSingleWeatherRequestAsync(z)
                     .thenAccept(weatherData -> {
+                        processedCounter.incrementAndGet();
                         if (weatherData != null) {
-                            outputCollector.emit(new Values(weatherData));
-                        }
-                        // sleep for a bit after 100 conns. to avoid to many files open
-                        if (counter.incrementAndGet() % 100 == 0) {
-                            Utils.sleep(5);
-                            //outputCollector.emitEndOfStream();
+                            outputCollector.emit(new Values(weatherData, processedCounter.get(), zip.size()));
                         }
                     })
                     .exceptionally(ex -> {
+                        processedCounter.incrementAndGet();
                         ex.printStackTrace();
                         return null;
                     });
+            // sleep for a bit after 100 conns. to avoid to many files open. Throttling
+            if (connectionsCreatedCounter.incrementAndGet() % 80 == 0) {
+                Utils.sleep(100);
+                //outputCollector.emitEndOfStream();
+            }
         }
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields("weatherData"));
+        outputFieldsDeclarer.declare(new Fields("weatherData", "counter", "totalTuples"));
     }
 }

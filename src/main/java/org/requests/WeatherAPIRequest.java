@@ -70,8 +70,9 @@ public class WeatherAPIRequest {
 
                        // ((CloseableHttpResponse) response).close();
                         return new AQIResponse(data.getZip(), locationName, stateName, aqi);
-                    } catch (IOException e) {
-                        throw new CompletionException(e);
+                    } catch (IOException | NullPointerException e) {
+                        //e.printStackTrace();
+                        return null;
                     }
                 });
     }
@@ -97,10 +98,6 @@ public class WeatherAPIRequest {
         try {
             // Send the request and capture the response
             java.net.http.HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
-
-            // Print the status code and response body
-            //System.out.println("Response Code: " + response.statusCode());
-            //System.out.println("Response Body: " + response.body());
 
 
             String res = response.body();

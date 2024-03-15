@@ -1,7 +1,9 @@
 package org.lossy;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class LossyCounter {
     private String descriptor;
@@ -54,10 +56,22 @@ public class LossyCounter {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        for (BucketElement el: bucketList) {
-            sb.append(el.toString());
-            sb.append("\n");
+        if (!bucketList.isEmpty()) {
+            List<BucketElement> sorted = bucketList.stream()
+                    .sorted(Comparator.comparingInt(BucketElement::getFrequency).reversed())
+                    .collect(Collectors.toList());
+            int idx = 0;
+            for (BucketElement el: sorted) {
+                sb.append(el.toString());
+                sb.append("\n");
+                idx++;
+                if (idx == 5) break;
+            }
         }
+        else {
+            sb.append("No states available");
+        }
+
         return sb.toString();
     }
 }
