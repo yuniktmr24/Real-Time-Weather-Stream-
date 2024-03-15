@@ -1,0 +1,12 @@
+Mar 14, 2024 6:26:10 PM org.storm.bolt.TopKCounterBolt execute
+INFO: Received AQI response - Zip: 78360, Location: Guerra, AQI: 1
+Mar 14, 2024 6:26:11 PM org.storm.bolt.TopKCounterBolt execute
+INFO: Received AQI response - Zip: 04939, Location: Garland, AQI: 1
+Mar 14, 2024 6:26:12 PM org.storm.bolt.TopKCounterBolt execute
+INFO: Received AQI response - Zip: 37186, Location: Westmoreland, AQI: 1
+Mar 14, 2024 6:26:13 PM org.storm.bolt.TopKCounterBolt execute
+INFO: Received AQI response - Zip: 62035, Location: Godfrey, AQI: 1
+Mar 14, 2024 6:26:14 PM org.storm.bolt.TopKCounterBolt execute
+INFO: Received AQI response - Zip: 37402, Location: Chattanooga, AQI: 1
+Mar 14, 2024 6:26:16 PM org.storm.bolt.TopKCounterBolt execute
+INFO: Received AQI response - Zip: 22937, Location: Esmont, AQI: 1
