@@ -14,15 +14,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class WeatherDataSpout extends BaseRichSpout {
+public class CloudCoverageSpout extends BaseRichSpout {
     SpoutOutputCollector outputCollector;
     private String filePath;
 
-    public WeatherDataSpout(String path) {
-        filePath = path;
+    public CloudCoverageSpout(String filePath) {
+        this.filePath = filePath;
     }
 
-    public WeatherDataSpout() {
+    public CloudCoverageSpout() {
     }
 
     @Override
@@ -30,28 +30,6 @@ public class WeatherDataSpout extends BaseRichSpout {
         this.outputCollector = spoutOutputCollector;
     }
 
-    /* Serial version
-    @Override
-    public void nextTuple() {
-        //List<WeatherResponse> realTimeWeatherData = WeatherAPIRequest.sendCurrentWeatherRequest(1);
-        List <ZipCodeData> zip = WeatherAPIRequest.readZipCodes(filePath != null ? filePath : "src/main/resources/uszips_min.csv");
-
-        System.out.println("Zip # "+ zip.size());
-        for (ZipCodeData z: zip) {
-            try {
-                WeatherResponse weatherData = WeatherAPIRequest.sendSingleWeatherRequest(z);
-                if (weatherData != null) {
-                    this.outputCollector.emit(new Values(weatherData));
-                }
-                Utils.sleep(5);
-            } catch (IOException | InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-    */
-
-    //async version
     @Override
     public void nextTuple() {
         List<ZipCodeData> zip = WeatherAPIRequest.readZipCodes(filePath != null ? filePath : "src/main/resources/uszips_min.csv");

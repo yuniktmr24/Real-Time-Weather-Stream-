@@ -5,18 +5,20 @@ import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.topology.TopologyBuilder;
+import org.storm.bolt.TopKCloudyBolt;
 import org.storm.bolt.TopKCounterBolt;
+import org.storm.spout.CloudCoverageSpout;
 import org.storm.spout.WeatherDataSpout;
 
 import java.util.logging.Logger;
 
-public class SerialTopology {
+public class ParallelTopology {
     public static void main (String [] args) throws TException {
         Logger logger = Logger.getLogger(SerialTopology.class.getName());
         TopologyBuilder builder = new TopologyBuilder();
 
-        builder.setSpout("WeatherDataSpout", args != null && args.length > 1 ? new WeatherDataSpout(args[1]): new WeatherDataSpout());
-        builder.setBolt("TopKCounterBolt", new TopKCounterBolt()).shuffleGrouping("WeatherDataSpout");;
+        builder.setSpout("CloudCoverageSpout", args != null && args.length > 1 ? new CloudCoverageSpout(args[1]): new CloudCoverageSpout());
+        builder.setBolt("TopKCloudyBolt", new TopKCloudyBolt()).shuffleGrouping("CloudCoverageSpout");;
 
         Config conf = new Config();
         //conf.setDebug(true);
@@ -35,7 +37,7 @@ public class SerialTopology {
                 throw new RuntimeException(var7);
             }
 
-            cluster.submitTopology("weather", conf, builder.createTopology());
+            cluster.submitTopology("cloud_cover", conf, builder.createTopology());
             try {
                 Thread.sleep(10000L);
             } catch (InterruptedException var5) {
@@ -45,4 +47,5 @@ public class SerialTopology {
             cluster.shutdown();
         }
     }
+
 }

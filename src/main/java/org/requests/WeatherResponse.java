@@ -1,6 +1,6 @@
 package org.requests;
 
-public class AQIResponse {
+public class WeatherResponse {
     private String zip;
 
     private String location;
@@ -9,7 +9,9 @@ public class AQIResponse {
 
     private int aqi;
 
-    public AQIResponse(String zip, String location, String state, int aqi) {
+    private int cloudCover;
+
+    public WeatherResponse(String zip, String location, String state, int aqi) {
         this.zip = zip;
         this.location = location;
         this.aqi = aqi;
@@ -48,14 +50,22 @@ public class AQIResponse {
         this.state = state;
     }
 
+    public int getCloudCover() {
+        return cloudCover;
+    }
+
+    public void setCloudCover(int cloudCover) {
+        this.cloudCover = cloudCover;
+    }
 
     @Override
     public String toString() {
-        return "AQIResponse{" +
+        return "WeatherResponse{" +
                 "zip='" + zip + '\'' +
                 ", location='" + location + '\'' +
                 ", state='" + state + '\'' +
                 ", aqi=" + aqi +
+                ", cloud cover=" + cloudCover +
                 '}';
     }
 }

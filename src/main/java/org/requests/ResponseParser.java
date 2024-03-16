@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ResponseParser {
-    public static List <AQIResponse> parseBulkResponse(String responseBody) throws Exception {
-        List<AQIResponse> aqi = new ArrayList<>();
+    public static List <WeatherResponse> parseBulkResponse(String responseBody) throws Exception {
+        List<WeatherResponse> aqi = new ArrayList<>();
         try {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode rootNode = mapper.readTree(responseBody);
@@ -35,7 +35,7 @@ public class ResponseParser {
                                 if (usEpaIndex != null) {
                                     int epaIndex = usEpaIndex.asInt();
                                     String zip = q.asText();
-                                    aqi.add(new AQIResponse(zip, locationName, state, epaIndex));
+                                    aqi.add(new WeatherResponse(zip, locationName, state, epaIndex));
                                 }
                             }
                         }

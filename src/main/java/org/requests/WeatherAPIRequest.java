@@ -3,7 +3,6 @@ package org.requests;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.domain.Utils;
 import org.domain.ZipCodeData;
 
@@ -19,7 +18,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 
 public class WeatherAPIRequest {
     private static final String API_KEY = "8f9666fbcaf642b8911204604240703";
@@ -41,11 +39,11 @@ public class WeatherAPIRequest {
         }
     }
 
-    public static List <AQIResponse> sendCurrentWeatherRequest (int batchSize) {
+    public static List <WeatherResponse> sendCurrentWeatherRequest (int batchSize) {
         return sendCurrentWeatherRequest(baseUrl, batchSize);
     }
 
-    public static CompletableFuture<AQIResponse> sendSingleWeatherRequestAsync(ZipCodeData data) {
+    public static CompletableFuture<WeatherResponse> sendSingleWeatherRequestAsync(ZipCodeData data) {
         String ep = baseUrl + CURRENT_WEATHER_EP;
         String encodedAPIKey = URLEncoder.encode(API_KEY, StandardCharsets.UTF_8);
         String urlWithParams = ep + "?key=" + encodedAPIKey + "&q=" + data.getZip() + "&aqi=yes";
@@ -67,9 +65,13 @@ public class WeatherAPIRequest {
                         String stateName = locationNode.get("region").asText();
                         JsonNode currentWeatherNode = rootNode.get("current");
                         int aqi = currentWeatherNode.get("air_quality").get("us-epa-index").asInt();
+                        int cloud = currentWeatherNode.get("cloud").asInt();
 
                        // ((CloseableHttpResponse) response).close();
-                        return new AQIResponse(data.getZip(), locationName, stateName, aqi);
+                        WeatherResponse res = new WeatherResponse(data.getZip(), locationName, stateName, aqi);
+                        res.setCloudCover(cloud);
+
+                        return res;
                     } catch (IOException | NullPointerException e) {
                         //e.printStackTrace();
                         return null;
@@ -78,7 +80,7 @@ public class WeatherAPIRequest {
     }
 
 
-    public static AQIResponse sendSingleWeatherRequest (ZipCodeData data) throws IOException, InterruptedException {
+    public static WeatherResponse sendSingleWeatherRequest (ZipCodeData data) throws IOException, InterruptedException {
         String ep = baseUrl + CURRENT_WEATHER_EP;
         // Encode the key parameters
         String encodedAPIKey = URLEncoder.encode(API_KEY, StandardCharsets.UTF_8);
@@ -94,7 +96,7 @@ public class WeatherAPIRequest {
                 .GET() // This specifies that it's a GET request
                 .build();
 
-        AQIResponse aqiResponse = null;
+        WeatherResponse weatherResponse = null;
         try {
             // Send the request and capture the response
             java.net.http.HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
@@ -111,18 +113,18 @@ public class WeatherAPIRequest {
             JsonNode currentWeatherNode = rootNode.get("current");
             int aqi = currentWeatherNode.get("air_quality").get("us-epa-index").asInt();
 
-            // Create AQIResponse object and add it to the list
-            aqiResponse = new AQIResponse(data.getZip(), locationName, stateName, aqi);
+            // Create WeatherResponse object and add it to the list
+            weatherResponse = new WeatherResponse(data.getZip(), locationName, stateName, aqi);
 
         } catch (Exception e) {
             //move on instead of throwing error and polluting the log
             //throw new RuntimeException(e);
         }
-        return aqiResponse;
+        return weatherResponse;
     }
 
-    private static List <AQIResponse> sendCurrentWeatherRequest (String baseUrl, int batchSize) {
-        List<AQIResponse> res = new ArrayList<>();
+    private static List <WeatherResponse> sendCurrentWeatherRequest (String baseUrl, int batchSize) {
+        List<WeatherResponse> res = new ArrayList<>();
         List <ZipCodeData> zip = readZipCodes("src/main/resources/uszips_min.csv");
 
         List<List<ZipCodeData>> batches = Utils.splitIntoBatches(zip, batchSize);
@@ -175,7 +177,7 @@ public class WeatherAPIRequest {
                     res = ResponseParser.parseBulkResponse(response.body());
                 }
                 else {
-                    for (AQIResponse res2: ResponseParser.parseBulkResponse(response.body())) {
+                    for (WeatherResponse res2: ResponseParser.parseBulkResponse(response.body())) {
                         res.add(res2);
                     }
                 }
