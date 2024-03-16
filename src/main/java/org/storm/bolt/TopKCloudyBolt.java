@@ -21,14 +21,7 @@ import java.util.logging.SimpleFormatter;
 public class TopKCloudyBolt extends BaseBasicBolt {
     Logger logger;
 
-    LossyCounter cloud1Counter;
-    LossyCounter cloud2Counter;
-
-    LossyCounter cloud3Counter;
-
-    LossyCounter cloud4Counter;
-
-    LossyCounter cloud5Counter;
+    LossyCounter [] cloudCounter = new LossyCounter[5];
 
     ScheduledExecutorService scheduler;
 
@@ -36,11 +29,9 @@ public class TopKCloudyBolt extends BaseBasicBolt {
 
     private void setupEpaCounters() {
         //yeah well this could be an array too
-        cloud1Counter = new LossyCounter();
-        cloud2Counter = new LossyCounter();
-        cloud3Counter = new LossyCounter();
-        cloud4Counter = new LossyCounter();
-        cloud5Counter = new LossyCounter();
+        for (int i = 0; i < cloudCounter.length; i++) {
+            cloudCounter[i] = new LossyCounter();
+        }
     }
 
     private void setUpPrintReportSchedule () {
@@ -49,12 +40,12 @@ public class TopKCloudyBolt extends BaseBasicBolt {
     }
 
     private void printEpaCounters() {
-        logger.info("Top 5 states with cloud coverage level 1: " + cloud1Counter.toString());
-        logger.info("Top 5 states with cloud coverage level 2: " + cloud2Counter.toString());
-        logger.info("Top 5 states with cloud coverage level 3: " + cloud3Counter.toString());
-        logger.info("Top 5 states with cloud coverage level 4: " + cloud4Counter.toString());
-        logger.info("Top 5 states with cloud coverage level 5: " + cloud5Counter.toString());
-
+        logger.info("Per minute cloud coverage data : ");
+        StringBuilder cloudCovOut = new StringBuilder();
+        for (int i = 0; i < cloudCounter.length; i++) {
+            cloudCovOut.append("Top 5 states with cloud coverage level ").append(i + 1).append(" : ").append(cloudCounter[i].toString()).append("\n");
+        }
+        logger.info(cloudCovOut.toString());
         //reset count now. start fresh for the next minute
         setupEpaCounters();
     }
@@ -88,19 +79,19 @@ public class TopKCloudyBolt extends BaseBasicBolt {
         int cloudCover = response.getCloudCover();
 
         if (cloudCover >= 0 && cloudCover <= 19) {
-            cloud1Counter.accept(state);
+            cloudCounter[0].accept(state);
         }
         else if (cloudCover >= 20 && cloudCover <= 39) {
-            cloud2Counter.accept(state);
+            cloudCounter[1].accept(state);
         }
         else if (cloudCover >= 40 && cloudCover <= 59) {
-            cloud3Counter.accept(state);
+            cloudCounter[2].accept(state);
         }
         else if (cloudCover >= 60 && cloudCover <= 79) {
-            cloud4Counter.accept(state);
+            cloudCounter[3].accept(state);
         }
         else if (cloudCover >= 80 && cloudCover <= 100) {
-            cloud5Counter.accept(state);
+            cloudCounter[4].accept(state);
         }
 
         //logger.info("Received AQI response - Zip: " + zip + ", Location: " + location + ", State "+ state + ", AQI: " + aqi);
