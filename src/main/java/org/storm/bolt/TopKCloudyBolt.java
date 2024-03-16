@@ -6,6 +6,7 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseBasicBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
 import org.lossy.LossyCounter;
 import org.requests.WeatherResponse;
 
@@ -18,8 +19,9 @@ import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
+
 public class TopKCloudyBolt extends BaseBasicBolt {
-    Logger logger;
+    BasicOutputCollector outputCollector;
 
     LossyCounter [] cloudCounter = new LossyCounter[5];
 
@@ -40,36 +42,30 @@ public class TopKCloudyBolt extends BaseBasicBolt {
     }
 
     private void printEpaCounters() {
-        logger.info("Per minute cloud coverage data : ");
         StringBuilder cloudCovOut = new StringBuilder();
+        cloudCovOut.append("Per minute cloud coverage data : \n");
         for (int i = 0; i < cloudCounter.length; i++) {
             cloudCovOut.append("Top 5 states with cloud coverage level ").append(i + 1).append(" : ").append(cloudCounter[i].toString()).append("\n");
         }
-        logger.info(cloudCovOut.toString());
+
+        if (outputCollector != null) {
+            outputCollector.emit(new Values(cloudCovOut));
+        }
         //reset count now. start fresh for the next minute
         setupEpaCounters();
     }
 
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context) {
-        // Initialize logger
-        logger = Logger.getLogger(TopKCloudyBolt.class.getName());
-        try {
-            // Create file handler
-            FileHandler fh = new FileHandler("current_cloud.log");
-            // Set formatter
-            fh.setFormatter(new SimpleFormatter());
-            // Add file handler to logger
-            logger.addHandler(fh);
-
             setupEpaCounters();
             setUpPrintReportSchedule();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
+
     @Override
     public void execute(Tuple tuple, BasicOutputCollector basicOutputCollector) {
+        if (outputCollector == null) {
+            outputCollector = basicOutputCollector;
+        }
         totalTuples = tuple.getInteger(2);
         int processedTuples = tuple.getInteger(1);
 
@@ -104,7 +100,7 @@ public class TopKCloudyBolt extends BaseBasicBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields("cloud_cover"));
+        outputFieldsDeclarer.declare(new Fields("cloud_cover_data"));
     }
 
     @Override

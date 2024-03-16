@@ -6,6 +6,7 @@ import org.apache.storm.StormSubmitter;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.topology.TopologyBuilder;
 import org.storm.bolt.TopKCloudyBolt;
+import org.storm.bolt.TopKCloudyPrinterBolt;
 import org.storm.bolt.TopKCounterBolt;
 import org.storm.spout.CloudCoverageSpout;
 import org.storm.spout.WeatherDataSpout;
@@ -19,6 +20,7 @@ public class ParallelTopology {
 
         builder.setSpout("CloudCoverageSpout", args != null && args.length > 1 ? new CloudCoverageSpout(args[1]): new CloudCoverageSpout());
         builder.setBolt("TopKCloudyBolt", new TopKCloudyBolt()).shuffleGrouping("CloudCoverageSpout");;
+        builder.setBolt("TopKCloudyPrinterBolt", new TopKCloudyPrinterBolt()).shuffleGrouping("TopKCloudyBolt");;
 
         Config conf = new Config();
         //conf.setDebug(true);
