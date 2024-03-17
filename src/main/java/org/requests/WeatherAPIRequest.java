@@ -3,7 +3,7 @@ package org.requests;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.domain.Utils;
+import org.domain.DomainUtils;
 import org.domain.ZipCodeData;
 
 import java.io.BufferedReader;
@@ -17,6 +17,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class WeatherAPIRequest {
@@ -24,6 +25,7 @@ public class WeatherAPIRequest {
 
     private static final HttpClient httpClient = HttpClient.newHttpClient();
     private static final String CURRENT_WEATHER_EP = "/current.json";
+    private static final String FORECAST_WEATHER_EP = "/forecast.json";
 
     // Define the base URI of the endpoint
     private static final String baseUrl = "http://api.weatherapi.com/v1";
@@ -31,11 +33,13 @@ public class WeatherAPIRequest {
     public static void main (String [] args) throws IOException, InterruptedException {
 
         //sendCurrentWeatherRequest(1);
+        Map <String, Long> stateFreqMap = DomainUtils.getStateCounts("src/main/resources/uszips.csv");
 
         List <ZipCodeData> zip = readZipCodes("src/main/resources/uszips_min.csv");
 
         for (ZipCodeData z: zip) {
-            sendSingleWeatherRequest(z);
+            //sendSingleWeatherRequest(z);
+            sendForecastWeatherRequest(z);
         }
     }
 
@@ -79,7 +83,62 @@ public class WeatherAPIRequest {
                 });
     }
 
+    @Deprecated
+    public static void sendForecastWeatherRequest (ZipCodeData data) throws IOException, InterruptedException {
+        String ep = baseUrl + FORECAST_WEATHER_EP;
+        // Encode the key parameters
+        String encodedAPIKey = URLEncoder.encode(API_KEY, StandardCharsets.UTF_8);
 
+        // Construct the complete URL with query parameters
+        String urlWithParams = ep + "?key=" + encodedAPIKey + "&q=" + data.getZip() + "&days=3";
+
+        URI uri = URI.create(urlWithParams);
+        HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                .uri(uri)
+                .header("Content-Type", "application/json")
+                //.POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .GET() // This specifies that it's a GET request
+                .build();
+
+        WeatherResponse weatherResponse = null;
+        try {
+            // Send the request and capture the response
+            java.net.http.HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+
+
+            String res = response.body();
+
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode rootNode = mapper.readTree(res);
+
+            JsonNode forecastDays = rootNode.path("forecast").path("forecastday");
+
+            List<Integer> avgCloudValues = new ArrayList<>();
+            List<Integer> cloudValues = new ArrayList<>();
+
+            for (JsonNode forecastDay : forecastDays) {
+                int totalCloud = 0;
+                JsonNode hours = forecastDay.path("hour");
+
+                for (JsonNode hour : hours) {
+                    totalCloud += hour.path("cloud").asInt();
+                }
+
+                cloudValues.add(totalCloud);
+                avgCloudValues.add(totalCloud / 24);
+            }
+
+            System.out.println("Total cloud values for each day: " + avgCloudValues);
+        }
+
+         catch (Exception e) {
+            //move on instead of throwing error and polluting the log
+            //throw new RuntimeException(e);
+        }
+    }
+
+
+    @Deprecated
     public static WeatherResponse sendSingleWeatherRequest (ZipCodeData data) throws IOException, InterruptedException {
         String ep = baseUrl + CURRENT_WEATHER_EP;
         // Encode the key parameters
@@ -112,9 +171,11 @@ public class WeatherAPIRequest {
 
             JsonNode currentWeatherNode = rootNode.get("current");
             int aqi = currentWeatherNode.get("air_quality").get("us-epa-index").asInt();
+            int cloud = currentWeatherNode.get("cloud").asInt();
 
             // Create WeatherResponse object and add it to the list
             weatherResponse = new WeatherResponse(data.getZip(), locationName, stateName, aqi);
+            weatherResponse.setCloudCover(cloud);
 
         } catch (Exception e) {
             //move on instead of throwing error and polluting the log
@@ -123,11 +184,12 @@ public class WeatherAPIRequest {
         return weatherResponse;
     }
 
+    @Deprecated
     private static List <WeatherResponse> sendCurrentWeatherRequest (String baseUrl, int batchSize) {
         List<WeatherResponse> res = new ArrayList<>();
         List <ZipCodeData> zip = readZipCodes("src/main/resources/uszips_min.csv");
 
-        List<List<ZipCodeData>> batches = Utils.splitIntoBatches(zip, batchSize);
+        List<List<ZipCodeData>> batches = DomainUtils.splitIntoBatches(zip, batchSize);
 
         baseUrl = baseUrl + CURRENT_WEATHER_EP;
         // Encode the key parameters
@@ -218,6 +280,42 @@ public class WeatherAPIRequest {
         }
 
         return zipCodes;
+    }
+
+    public static CompletableFuture<WeatherResponse> sendWeatherForecastRequestAsync(ZipCodeData data) {
+        String ep = baseUrl + FORECAST_WEATHER_EP;
+        String encodedAPIKey = URLEncoder.encode(API_KEY, StandardCharsets.UTF_8);
+        String urlWithParams = ep + "?key=" + encodedAPIKey + "&q=" + data.getZip() + "&days=3";
+
+        URI uri = URI.create(urlWithParams);
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(uri)
+                .header("Content-Type", "application/json")
+                .GET()
+                .build();
+
+        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        JsonNode rootNode = mapper.readTree(response.body());
+                        JsonNode locationNode = rootNode.get("location");
+                        String locationName = locationNode.get("name").asText();
+                        String stateName = locationNode.get("region").asText();
+                        JsonNode currentWeatherNode = rootNode.get("current");
+                        int aqi = currentWeatherNode.get("air_quality").get("us-epa-index").asInt();
+                        int cloud = currentWeatherNode.get("cloud").asInt();
+
+                        // ((CloseableHttpResponse) response).close();
+                        WeatherResponse res = new WeatherResponse(data.getZip(), locationName, stateName, aqi);
+                        res.setCloudCover(cloud);
+
+                        return res;
+                    } catch (IOException | NullPointerException e) {
+                        //e.printStackTrace();
+                        return null;
+                    }
+                });
     }
 }
 

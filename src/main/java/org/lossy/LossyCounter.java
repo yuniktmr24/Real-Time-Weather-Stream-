@@ -3,6 +3,7 @@ package org.lossy;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class LossyCounter {
@@ -63,6 +64,44 @@ public class LossyCounter {
             int idx = 0;
             for (BucketElement el: sorted) {
                 sb.append(el.toString());
+                sb.append("\n");
+                idx++;
+                if (idx == 5) break;
+            }
+        }
+        else {
+            sb.append("No states available");
+        }
+
+        return sb.toString();
+    }
+
+    private void normalizeBucketElements (Map<String, Long> normalizationMap) {
+        for (BucketElement el: bucketList) {
+            String content = (String) el.getContent();
+
+            int totalCount = normalizationMap.getOrDefault(content, 1L).intValue();
+
+            if (totalCount == 0) {
+                //won't happen. but well let's make the code failsafe
+                continue;
+            }
+            double normalizedFreq = (double) el.getFrequency() / totalCount;
+
+            el.setNormalizedFrequency(normalizedFreq);
+        }
+    }
+
+    public String toNormalizedString(Map<String, Long> normalizationMap) {
+        normalizeBucketElements(normalizationMap);
+        StringBuilder sb = new StringBuilder();
+        if (!bucketList.isEmpty()) {
+            List<BucketElement> sorted = bucketList.stream()
+                    .sorted(Comparator.comparingDouble(BucketElement::getNormalizedFrequency).reversed())
+                    .collect(Collectors.toList());
+            int idx = 0;
+            for (BucketElement el: sorted) {
+                sb.append(el.toNormalizedString());
                 sb.append("\n");
                 idx++;
                 if (idx == 5) break;

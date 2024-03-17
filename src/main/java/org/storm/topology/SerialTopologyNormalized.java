@@ -6,17 +6,23 @@ import org.apache.storm.StormSubmitter;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.topology.TopologyBuilder;
 import org.storm.bolt.TopKCounterBolt;
+import org.storm.spout.UtilitySpout;
 import org.storm.spout.WeatherDataSpout;
 
 import java.util.logging.Logger;
 
-public class SerialTopology {
+public class SerialTopologyNormalized {
     public static void main (String [] args) throws TException {
         Logger logger = Logger.getLogger(SerialTopology.class.getName());
         TopologyBuilder builder = new TopologyBuilder();
 
         builder.setSpout("WeatherDataSpout", args != null && args.length > 1 ? new WeatherDataSpout(args[1]): new WeatherDataSpout());
-        builder.setBolt("TopKCounterBolt", new TopKCounterBolt()).shuffleGrouping("WeatherDataSpout");
+        builder.setSpout("UtilitySpout", new UtilitySpout());
+
+        builder.setBolt("TopKCounterBolt", new TopKCounterBolt())
+                .shuffleGrouping("WeatherDataSpout")
+                .shuffleGrouping("UtilitySpout");
+
 
         Config conf = new Config();
         //conf.setDebug(true);
@@ -35,7 +41,7 @@ public class SerialTopology {
                 throw new RuntimeException(var7);
             }
 
-            cluster.submitTopology("weather", conf, builder.createTopology());
+            cluster.submitTopology("weather_norm", conf, builder.createTopology());
             try {
                 Thread.sleep(10000L);
             } catch (InterruptedException var5) {

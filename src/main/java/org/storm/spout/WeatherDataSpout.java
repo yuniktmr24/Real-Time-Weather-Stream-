@@ -7,12 +7,18 @@ import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
+import org.domain.DomainUtils;
 import org.domain.ZipCodeData;
 import org.requests.WeatherAPIRequest;
+import org.storm.bolt.TopKCloudyBolt;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 public class WeatherDataSpout extends BaseRichSpout {
     SpoutOutputCollector outputCollector;
@@ -30,6 +36,10 @@ public class WeatherDataSpout extends BaseRichSpout {
         this.outputCollector = spoutOutputCollector;
     }
 
+    public void prepare(Map<String, Object> topoConf, TopologyContext context) throws IOException {
+        DomainUtils.getStateCounts(filePath != null ? filePath : "src/main/resources/uszips_min.csv");
+    }
+
     /* Serial version
     @Override
     public void nextTuple() {
@@ -43,7 +53,7 @@ public class WeatherDataSpout extends BaseRichSpout {
                 if (weatherData != null) {
                     this.outputCollector.emit(new Values(weatherData));
                 }
-                Utils.sleep(5);
+                DomainUtils.sleep(5);
             } catch (IOException | InterruptedException e) {
                 throw new RuntimeException(e);
             }

@@ -7,6 +7,8 @@ public class BucketElement {
 
     private int delta;
 
+    private double normalizedFrequency;
+
     public BucketElement(Object content, int delta) {
         this.content = content;
         this.delta = delta;
@@ -36,5 +38,23 @@ public class BucketElement {
                 ", frequency=" + frequency +
                 ", delta=" + delta +
                 '}';
+    }
+
+
+    public String toNormalizedString() {
+        return "BucketElement{" +
+                "content=" + content +
+                ", frequency=" + frequency +
+                ", delta=" + delta +
+                ", normalizedFrequency=" + normalizedFrequency +
+                '}';
+    }
+
+    public void setNormalizedFrequency(double normalizedFrequency) {
+        this.normalizedFrequency = normalizedFrequency;
+    }
+
+    public double getNormalizedFrequency() {
+        return normalizedFrequency;
     }
 }
