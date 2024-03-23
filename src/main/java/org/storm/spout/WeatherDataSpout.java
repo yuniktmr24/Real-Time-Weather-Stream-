@@ -69,25 +69,26 @@ public class WeatherDataSpout extends BaseRichSpout {
         System.out.println("Zip # " + zip.size());
         AtomicInteger processedCounter = new AtomicInteger(0);
         AtomicInteger connectionsCreatedCounter = new AtomicInteger(0);
+
         for (ZipCodeData z : zip) {
             WeatherAPIRequest.sendSingleWeatherRequestAsync(z)
                     .thenAccept(weatherData -> {
-                        processedCounter.incrementAndGet();
-                        if (weatherData != null) {
-                            outputCollector.emit(new Values(weatherData, processedCounter.get(), zip.size()));
-                        }
-                    })
-                    .exceptionally(ex -> {
-                        processedCounter.incrementAndGet();
-                        ex.printStackTrace();
-                        return null;
-                    });
+                                processedCounter.incrementAndGet();
+                                if (weatherData != null) {
+                                    outputCollector.emit(new Values(weatherData, processedCounter.get(), zip.size()));
+                                }
+                            });
+//                    }).exceptionally(e -> {
+//                            processedCounter.incrementAndGet();
+//                        }
+//                    );
             // sleep for a bit after 100 conns to avoid too many files open. Throttling
             if (connectionsCreatedCounter.incrementAndGet() % 80 == 0) {
                 Utils.sleep(100);
                 //outputCollector.emitEndOfStream();
             }
         }
+
     }
 
     @Override

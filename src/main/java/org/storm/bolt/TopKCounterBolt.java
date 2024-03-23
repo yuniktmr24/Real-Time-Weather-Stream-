@@ -31,6 +31,8 @@ public class TopKCounterBolt extends BaseBasicBolt {
 
     LossyCounter epa5Counter;
 
+    LossyCounter epa6Counter;
+
     ScheduledExecutorService scheduler;
 
     private int totalTuples;
@@ -44,6 +46,7 @@ public class TopKCounterBolt extends BaseBasicBolt {
         epa3Counter = new LossyCounter();
         epa4Counter = new LossyCounter();
         epa5Counter = new LossyCounter();
+        epa6Counter = new LossyCounter();
     }
 
     private void setUpPrintReportSchedule () {
@@ -53,18 +56,20 @@ public class TopKCounterBolt extends BaseBasicBolt {
 
     private void printEpaCounters() {
         if (stateCounterMap != null && !stateCounterMap.isEmpty()) {
-            logger.info("Top 5 states with EPA 1: " + epa1Counter.toNormalizedString(stateCounterMap));
-            logger.info("Top 5 states with EPA 2: " + epa2Counter.toNormalizedString(stateCounterMap));
-            logger.info("Top 5 states with EPA 3: " + epa3Counter.toNormalizedString(stateCounterMap));
-            logger.info("Top 5 states with EPA 4: " + epa4Counter.toNormalizedString(stateCounterMap));
-            logger.info("Top 5 states with EPA 5: " + epa5Counter.toNormalizedString(stateCounterMap));
+            logger.info("<air_quality_level-1>" + epa1Counter.toNormalizedString(stateCounterMap));
+            logger.info("<air_quality_level-2>" + epa2Counter.toNormalizedString(stateCounterMap));
+            logger.info("<air_quality_level-3>" + epa3Counter.toNormalizedString(stateCounterMap));
+            logger.info("<air_quality_level-4>" + epa4Counter.toNormalizedString(stateCounterMap));
+            logger.info("<air_quality_level-5>" + epa5Counter.toNormalizedString(stateCounterMap));
+            logger.info("<air_quality_level-6>" + epa6Counter.toNormalizedString(stateCounterMap));
         }
         else {
-            logger.info("Top 5 states with EPA 1: " + epa1Counter.toString());
-            logger.info("Top 5 states with EPA 2: " + epa2Counter.toString());
-            logger.info("Top 5 states with EPA 3: " + epa3Counter.toString());
-            logger.info("Top 5 states with EPA 4: " + epa4Counter.toString());
-            logger.info("Top 5 states with EPA 5: " + epa5Counter.toString());
+            logger.info("<air_quality_level-1>" + epa1Counter.toString());
+            logger.info("<air_quality_level-2>" + epa2Counter.toString());
+            logger.info("<air_quality_level-3>" + epa3Counter.toString());
+            logger.info("<air_quality_level-4>" + epa4Counter.toString());
+            logger.info("<air_quality_level-5>" + epa5Counter.toString());
+            logger.info("<air_quality_level-6>" + epa6Counter.toString());
         }
 
         //reset count now. start fresh for the next minute
@@ -94,7 +99,7 @@ public class TopKCounterBolt extends BaseBasicBolt {
         //Utility stream data
         if (tuple.contains("source") && tuple.getStringByField("source").equals("UtilitySpout")) {
             stateCounterMap = (Map<String, Long>) tuple.getValueByField("stateCountMap");
-            logger.info("Freq map in bolt "+ stateCounterMap.size());
+            //logger.info("Freq map in bolt "+ stateCounterMap.size());
         }
         //regular weather data
         else {
@@ -118,12 +123,15 @@ public class TopKCounterBolt extends BaseBasicBolt {
                 epa4Counter.accept(state);
             } else if (aqi == 5) {
                 epa5Counter.accept(state);
-            }
+            } else if (aqi == 6) {
+            epa5Counter.accept(state);
+        }
 
             //logger.info("Received AQI response - Zip: " + zip + ", Location: " + location + ", State "+ state + ", AQI: " + aqi);
 
+            //logger.info("Processed tuples "+ processedTuples + " | Total tuples "+ totalTuples);
             if (processedTuples % totalTuples == 0) {
-                System.out.println("Processed a complete round of weather data for all zip codes");
+                //System.out.println("Processed a complete round of weather data for all zip codes");
                 //setupEpaCounters();
             }
         }

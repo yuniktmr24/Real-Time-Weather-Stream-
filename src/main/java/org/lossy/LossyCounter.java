@@ -57,15 +57,16 @@ public class LossyCounter {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(this.descriptor).append("\n");
+        if (this.descriptor != null) {
+            sb.append(this.descriptor).append(":");
+        }
         if (!bucketList.isEmpty()) {
             List<BucketElement> sorted = bucketList.stream()
                     .sorted(Comparator.comparingInt(BucketElement::getFrequency).reversed())
                     .collect(Collectors.toList());
             int idx = 0;
             for (BucketElement el: sorted) {
-                sb.append(el.toString());
-                sb.append("\n");
+                sb.append("<").append(idx + 1).append("-").append(el.getContent()).append(": ").append(el.getFrequency()).append(">");
                 idx++;
                 if (idx == 5) break;
             }

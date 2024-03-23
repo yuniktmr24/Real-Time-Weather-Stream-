@@ -64,10 +64,7 @@ public class TopKCloudyBoltParallel extends BaseBasicBolt {
         int cloudLevel = (int) tuple.getValue(1);
 
         cloudCounter.accept(state);
-        cloudCounter.setDescriptor("Top 5 states with cloud level " + String.valueOf(cloudLevel));
-
-        //System.out.println("Cloud level "+ cloudLevel);
-        //logger.info("Received AQI response - Zip: " + zip + ", Location: " + location + ", State "+ state + ", AQI: " + aqi);
+        cloudCounter.setDescriptor("<cloud_level_" + String.valueOf(cloudLevel) + ">");
 
         if (processedTuples % totalTuples == 0) {
             System.out.println("Processed a complete round of weather data for all zip codes");

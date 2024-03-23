@@ -9,6 +9,7 @@ import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
 import org.domain.ZipCodeData;
 import org.requests.WeatherAPIRequest;
+import org.requests.WeatherResponse;
 
 import java.util.List;
 import java.util.Map;
@@ -38,35 +39,33 @@ public class CloudCoverageSpout extends BaseRichSpout {
         AtomicInteger processedCounter = new AtomicInteger(0);
         AtomicInteger connectionsCreatedCounter = new AtomicInteger(0);
         for (ZipCodeData z : zip) {
-            WeatherAPIRequest.sendSingleWeatherRequestAsync(z)
-                    .thenAccept(weatherData -> {
+            WeatherAPIRequest.sendWeatherForecastRequestAsync(z)
+                    .thenAccept(weatherDataList -> {
                         processedCounter.incrementAndGet();
-                        if (weatherData != null) {
-                            int cloudLevel = 0;
-                            int cloudCover = weatherData.getCloudCover();
-                            if (cloudCover >= 0 && cloudCover <= 19) {
-                                cloudLevel = 1;
+                        for (WeatherResponse weatherData : weatherDataList) {
+                            if (weatherData != null) {
+                                int cloudLevel = 0;
+                                int cloudCover = weatherData.getCloudCover();
+                                if (cloudCover >= 0 && cloudCover <= 19) {
+                                    cloudLevel = 1;
+                                } else if (cloudCover >= 20 && cloudCover <= 39) {
+                                    cloudLevel = 2;
+                                } else if (cloudCover >= 40 && cloudCover <= 59) {
+                                    cloudLevel = 3;
+                                } else if (cloudCover >= 60 && cloudCover <= 79) {
+                                    cloudLevel = 4;
+                                } else if (cloudCover >= 80 && cloudCover <= 100) {
+                                    cloudLevel = 5;
+                                }
+                                outputCollector.emit(new Values(weatherData.getState(), cloudLevel, processedCounter.get(), zip.size()));
                             }
-                            else if (cloudCover >= 20 && cloudCover <= 39) {
-                                cloudLevel = 2;
-                            }
-                            else if (cloudCover >= 40 && cloudCover <= 59) {
-                                cloudLevel = 3;
-                            }
-                            else if (cloudCover >= 60 && cloudCover <= 79) {
-                                cloudLevel = 4;
-                            }
-                            else if (cloudCover >= 80 && cloudCover <= 100) {
-                                cloudLevel = 5;
-                            }
-                            outputCollector.emit(new Values(weatherData.getState(), cloudLevel, processedCounter.get(), zip.size()));
                         }
-                    })
-                    .exceptionally(ex -> {
-                        processedCounter.incrementAndGet();
-                        ex.printStackTrace();
-                        return null;
                     });
+//                    .exceptionally(ex -> {
+//                        processedCounter.incrementAndGet();
+//                       // ex.printStackTrace();
+//                        return null;
+//                    });
             // sleep for a bit after 100 conns to avoid too many files open. Throttling
             if (connectionsCreatedCounter.incrementAndGet() % 80 == 0) {
                 Utils.sleep(100);
