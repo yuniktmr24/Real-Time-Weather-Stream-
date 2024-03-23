@@ -42,7 +42,24 @@ public class CloudCoverageSpout extends BaseRichSpout {
                     .thenAccept(weatherData -> {
                         processedCounter.incrementAndGet();
                         if (weatherData != null) {
-                            outputCollector.emit(new Values(weatherData, processedCounter.get(), zip.size()));
+                            int cloudLevel = 0;
+                            int cloudCover = weatherData.getCloudCover();
+                            if (cloudCover >= 0 && cloudCover <= 19) {
+                                cloudLevel = 1;
+                            }
+                            else if (cloudCover >= 20 && cloudCover <= 39) {
+                                cloudLevel = 2;
+                            }
+                            else if (cloudCover >= 40 && cloudCover <= 59) {
+                                cloudLevel = 3;
+                            }
+                            else if (cloudCover >= 60 && cloudCover <= 79) {
+                                cloudLevel = 4;
+                            }
+                            else if (cloudCover >= 80 && cloudCover <= 100) {
+                                cloudLevel = 5;
+                            }
+                            outputCollector.emit(new Values(weatherData.getState(), cloudLevel, processedCounter.get(), zip.size()));
                         }
                     })
                     .exceptionally(ex -> {
@@ -60,6 +77,6 @@ public class CloudCoverageSpout extends BaseRichSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields("weatherData", "counter", "totalTuples"));
+        outputFieldsDeclarer.declare(new Fields("weatherDataState", "cloudLevel", "counter", "totalTuples"));
     }
 }

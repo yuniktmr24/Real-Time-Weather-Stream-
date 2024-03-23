@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class WeatherAPIRequest {
-    private static final String API_KEY = "8f9666fbcaf642b8911204604240703";
+    private static final String API_KEY = "0f29bea071ac435d83421112242303";
 
     private static final HttpClient httpClient = HttpClient.newHttpClient();
     private static final String CURRENT_WEATHER_EP = "/current.json";

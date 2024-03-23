@@ -57,6 +57,7 @@ public class LossyCounter {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        sb.append(this.descriptor).append("\n");
         if (!bucketList.isEmpty()) {
             List<BucketElement> sorted = bucketList.stream()
                     .sorted(Comparator.comparingInt(BucketElement::getFrequency).reversed())
@@ -112,5 +113,13 @@ public class LossyCounter {
         }
 
         return sb.toString();
+    }
+
+    public String getDescriptor() {
+        return descriptor;
+    }
+
+    public void setDescriptor(String descriptor) {
+        this.descriptor = descriptor;
     }
 }

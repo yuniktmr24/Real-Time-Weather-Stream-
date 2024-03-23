@@ -19,21 +19,17 @@ import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-@Deprecated
-public class TopKCloudyBolt extends BaseBasicBolt {
+public class TopKCloudyBoltParallel extends BaseBasicBolt {
     BasicOutputCollector outputCollector;
 
-    LossyCounter [] cloudCounter = new LossyCounter[5];
+    LossyCounter cloudCounter;
 
     ScheduledExecutorService scheduler;
 
     private int totalTuples;
 
     private void setupEpaCounters() {
-        //yeah well this could be an array too
-        for (int i = 0; i < cloudCounter.length; i++) {
-            cloudCounter[i] = new LossyCounter();
-        }
+        cloudCounter = new LossyCounter(0.01);
     }
 
     private void setUpPrintReportSchedule () {
@@ -42,14 +38,9 @@ public class TopKCloudyBolt extends BaseBasicBolt {
     }
 
     private void printEpaCounters() {
-        StringBuilder cloudCovOut = new StringBuilder();
-        cloudCovOut.append("Per minute cloud coverage data : \n");
-        for (int i = 0; i < cloudCounter.length; i++) {
-            cloudCovOut.append("Top 5 states with cloud coverage level ").append(i + 1).append(" : ").append(cloudCounter[i].toString()).append("\n");
-        }
-
+        //System.out.println(cloudCounter.toString());
         if (outputCollector != null) {
-            outputCollector.emit(new Values(cloudCovOut));
+            outputCollector.emit(new Values(cloudCounter, 1));
         }
         //reset count now. start fresh for the next minute
         setupEpaCounters();
@@ -57,39 +48,25 @@ public class TopKCloudyBolt extends BaseBasicBolt {
 
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context) {
-            setupEpaCounters();
-            setUpPrintReportSchedule();
+        setupEpaCounters();
+        setUpPrintReportSchedule();
     }
 
     @Override
-    public void execute(Tuple tuple, BasicOutputCollector basicOutputCollector) {
+    public synchronized void execute(Tuple tuple, BasicOutputCollector basicOutputCollector) {
         if (outputCollector == null) {
             outputCollector = basicOutputCollector;
         }
-        totalTuples = tuple.getInteger(2);
-        int processedTuples = tuple.getInteger(1);
+        totalTuples = tuple.getInteger(3);
+        int processedTuples = tuple.getInteger(2);
 
-        WeatherResponse response = (WeatherResponse) tuple.getValue(0);
+        String state = (String) tuple.getValue(0);
+        int cloudLevel = (int) tuple.getValue(1);
 
-        String state = response.getState();
-        int cloudCover = response.getCloudCover();
+        cloudCounter.accept(state);
+        cloudCounter.setDescriptor("Top 5 states with cloud level " + String.valueOf(cloudLevel));
 
-        if (cloudCover >= 0 && cloudCover <= 19) {
-            cloudCounter[0].accept(state);
-        }
-        else if (cloudCover >= 20 && cloudCover <= 39) {
-            cloudCounter[1].accept(state);
-        }
-        else if (cloudCover >= 40 && cloudCover <= 59) {
-            cloudCounter[2].accept(state);
-        }
-        else if (cloudCover >= 60 && cloudCover <= 79) {
-            cloudCounter[3].accept(state);
-        }
-        else if (cloudCover >= 80 && cloudCover <= 100) {
-            cloudCounter[4].accept(state);
-        }
-
+        //System.out.println("Cloud level "+ cloudLevel);
         //logger.info("Received AQI response - Zip: " + zip + ", Location: " + location + ", State "+ state + ", AQI: " + aqi);
 
         if (processedTuples % totalTuples == 0) {
@@ -100,7 +77,7 @@ public class TopKCloudyBolt extends BaseBasicBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields("cloud_cover_data"));
+        outputFieldsDeclarer.declare(new Fields("cloud_cover_data", "printerBolt"));
     }
 
     @Override

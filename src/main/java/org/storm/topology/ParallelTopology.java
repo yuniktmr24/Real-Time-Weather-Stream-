@@ -5,9 +5,8 @@ import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.topology.TopologyBuilder;
-import org.storm.bolt.TopKCloudyBolt;
-import org.storm.bolt.TopKCloudyPrinterBolt;
-import org.storm.bolt.TopKCounterBolt;
+import org.apache.storm.tuple.Fields;
+import org.storm.bolt.*;
 import org.storm.spout.CloudCoverageSpout;
 import org.storm.spout.WeatherDataSpout;
 
@@ -18,16 +17,24 @@ public class ParallelTopology {
         Logger logger = Logger.getLogger(SerialTopology.class.getName());
         TopologyBuilder builder = new TopologyBuilder();
 
-        builder.setSpout("CloudCoverageSpout", args != null && args.length > 1 ? new CloudCoverageSpout(args[1]): new CloudCoverageSpout());
-        builder.setBolt("TopKCloudyBolt", new TopKCloudyBolt()).shuffleGrouping("CloudCoverageSpout");;
-        builder.setBolt("TopKCloudyPrinterBolt", new TopKCloudyPrinterBolt()).shuffleGrouping("TopKCloudyBolt");;
+        int SPOUT_PARALLELISM = 5;
 
+        //divide the workload for the spout. chunk the zip file
+
+        builder.setSpout("CloudCoverageSpout",  args != null && args.length > 1 ? new CloudCoverageSpout(args[1]): new CloudCoverageSpout(), SPOUT_PARALLELISM);
+
+
+        builder.setBolt("TopKCloudyBoltParallel", new TopKCloudyBoltParallel(), 5).shuffleGrouping("CloudCoverageSpout").fieldsGrouping("CloudCoverageSpout", new Fields("cloudLevel"));;
+        builder.setBolt("TopKCloudyPrinterBolt", new TopKCloudyPrinterBolt(), 5).shuffleGrouping("TopKCloudyBoltParallel");//.fieldsGrouping("TopKCloudyBoltParallel", new Fields("printerBolt"));
+        //builder.setBolt("TopKCloudyPrinterBolt", new TopKCloudyPrinterBolt(),  1).globalGrouping("TopKCloudyBoltParallel");
+        //builder.setBolt("AggregatorBolt", new AggregatorBolt(),  1).globalGrouping("TopKCloudyPrinterBolt");
         Config conf = new Config();
         //conf.setDebug(true);
 
         if (args != null && args.length > 0) {
             //logger.info("Args[1] is "+ args[1]);
             conf.put("filePath", args[1]);
+            conf.setNumWorkers(5);
             //conf.setNumWorkers(3);
             StormSubmitter.submitTopology(args[0], conf, builder.createTopology());
         } else {
