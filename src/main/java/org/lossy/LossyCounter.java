@@ -1,12 +1,14 @@
 package org.lossy;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class LossyCounter {
+public class LossyCounter implements Serializable {
+    private static final long serialversionUID = 1L;
     private String descriptor;
     private double THRESHOLD_EPSILON = 0.1; //default was 0.2
 

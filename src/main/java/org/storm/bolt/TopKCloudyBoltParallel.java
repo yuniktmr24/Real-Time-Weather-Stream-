@@ -40,7 +40,7 @@ public class TopKCloudyBoltParallel extends BaseBasicBolt {
     private void printEpaCounters() {
         //System.out.println(cloudCounter.toString());
         if (outputCollector != null) {
-            outputCollector.emit(new Values(cloudCounter, 1));
+            outputCollector.emit(new Values(cloudCounter.toString()));
         }
         //reset count now. start fresh for the next minute
         setupEpaCounters();
@@ -74,7 +74,7 @@ public class TopKCloudyBoltParallel extends BaseBasicBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields("cloud_cover_data", "printerBolt"));
+        outputFieldsDeclarer.declare(new Fields("cloud_cover_data"));
     }
 
     @Override

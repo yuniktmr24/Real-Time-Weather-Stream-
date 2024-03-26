@@ -1,6 +1,9 @@
 package org.lossy;
 
-public class BucketElement {
+import java.io.Serializable;
+
+public class BucketElement implements Serializable {
+    private static final long serialversionUID = 1L;
     private Object content;
 
     private int frequency;

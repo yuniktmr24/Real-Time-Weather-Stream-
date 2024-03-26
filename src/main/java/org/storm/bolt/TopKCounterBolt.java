@@ -56,20 +56,24 @@ public class TopKCounterBolt extends BaseBasicBolt {
 
     private void printEpaCounters() {
         if (stateCounterMap != null && !stateCounterMap.isEmpty()) {
+            logger.info("-------------------------------------------------------------------");
             logger.info("<air_quality_level-1>" + epa1Counter.toNormalizedString(stateCounterMap));
             logger.info("<air_quality_level-2>" + epa2Counter.toNormalizedString(stateCounterMap));
             logger.info("<air_quality_level-3>" + epa3Counter.toNormalizedString(stateCounterMap));
             logger.info("<air_quality_level-4>" + epa4Counter.toNormalizedString(stateCounterMap));
             logger.info("<air_quality_level-5>" + epa5Counter.toNormalizedString(stateCounterMap));
             logger.info("<air_quality_level-6>" + epa6Counter.toNormalizedString(stateCounterMap));
+            logger.info("-------------------------------------------------------------------");
         }
         else {
+            logger.info("-------------------------------------------------------------------");
             logger.info("<air_quality_level-1>" + epa1Counter.toString());
             logger.info("<air_quality_level-2>" + epa2Counter.toString());
             logger.info("<air_quality_level-3>" + epa3Counter.toString());
             logger.info("<air_quality_level-4>" + epa4Counter.toString());
             logger.info("<air_quality_level-5>" + epa5Counter.toString());
             logger.info("<air_quality_level-6>" + epa6Counter.toString());
+            logger.info("-------------------------------------------------------------------");
         }
 
         //reset count now. start fresh for the next minute

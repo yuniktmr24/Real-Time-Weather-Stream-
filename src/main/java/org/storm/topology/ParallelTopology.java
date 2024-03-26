@@ -25,8 +25,8 @@ public class ParallelTopology {
 
 
         builder.setBolt("TopKCloudyBoltParallel", new TopKCloudyBoltParallel(), 5).shuffleGrouping("CloudCoverageSpout").fieldsGrouping("CloudCoverageSpout", new Fields("cloudLevel"));;
-        builder.setBolt("TopKCloudyPrinterBolt", new TopKCloudyPrinterBolt(), 5).shuffleGrouping("TopKCloudyBoltParallel");//.fieldsGrouping("TopKCloudyBoltParallel", new Fields("printerBolt"));
-        //builder.setBolt("TopKCloudyPrinterBolt", new TopKCloudyPrinterBolt(),  1).globalGrouping("TopKCloudyBoltParallel");
+        //builder.setBolt("TopKCloudyPrinterBolt", new TopKCloudyPrinterBolt(), 5).shuffleGrouping("TopKCloudyBoltParallel");//.fieldsGrouping("TopKCloudyBoltParallel", new Fields("printerBolt"));
+        builder.setBolt("TopKCloudyPrinterBolt", new TopKCloudyPrinterBolt(),  1).globalGrouping("TopKCloudyBoltParallel");
         //builder.setBolt("AggregatorBolt", new AggregatorBolt(),  1).globalGrouping("TopKCloudyPrinterBolt");
         Config conf = new Config();
         //conf.setDebug(true);
