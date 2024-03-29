@@ -75,7 +75,6 @@ public class TopKCounterBolt extends BaseBasicBolt {
             logger.info("<air_quality_level-6>" + epa6Counter.toString());
             logger.info("-------------------------------------------------------------------");
         }
-
         //reset count now. start fresh for the next minute
         setupEpaCounters();
     }

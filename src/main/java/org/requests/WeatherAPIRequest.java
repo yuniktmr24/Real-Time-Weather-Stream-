@@ -25,7 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class WeatherAPIRequest {
-    private static final String API_KEY = "0f29bea071ac435d83421112242303";
+    private static final String API_KEY = "7b1c4bdeac5e4a63afe164157242703";
 
 
     //private static final ExecutorService executorService = Executors.newCachedThreadPool();;
